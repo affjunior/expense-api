@@ -1,101 +1,149 @@
-# expense-api
+# Expense API
+
+A RESTful API for managing expenses built with NestJS and DynamoDB, following Clean Architecture principles.
 
 ## Architecture Diagram
 <p align="center">
     <img src="assets/architecture-diagram.png" alt="Architecture Diagram" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Architecture
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project follows Clean Architecture:
 
-## Description
+```
+src/
+├── domain/              # Business logic & entities (no dependencies)
+│   ├── entities/        # Domain entities
+│   ├── repositories/    # Repository interfaces
+│   ├── exceptions/      # Custom exceptions
+│   └── types/          # Type definitions
+├── application/         # Use cases & business rules
+├── infrastructure/      # External implementations
+│   ├── database/       # Database configuration
+│   └── repository/     # Repository implementations (DynamoDB)
+```
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Dependency Inversion
 
-## Project setup
+- **Domain layer** defines repository interfaces
+- **Infrastructure layer** implements these interfaces with DynamoDB
+- Application code depends on abstractions, not concrete implementations
+- Easy to swap database implementations (e.g., PostgreSQL, MongoDB) without changing domain logic
+
+## Installation
 
 ```bash
 $ yarn install
 ```
 
-## Compile and run the project
+## Environment Variables
 
-```bash
-# development
-$ yarn run start
+Create a `.env` file in the root directory:
 
-# watch mode
-$ yarn run start:dev
+```env
+# AWS Configuration
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
 
-# production mode
-$ yarn run start:prod
+# DynamoDB Configuration
+DYNAMODB_ENDPOINT=http://localhost:8000  # For local
+GROUPS_TABLE_NAME=Groups
+MEMBERS_TABLE_NAME=Members
+EXPENSES_TABLE_NAME=Expenses
 ```
 
-## Run tests
+## DynamoDB Setup
+
+### Local Development
+
+Use DynamoDB Local for development:
 
 ```bash
-# unit tests
-$ yarn run test
+# Using Docker
+docker run -p 8000:8000 amazon/dynamodb-local
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# Or install DynamoDB Local directly
+# Download from: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
 ```
 
-## Deployment
+### Table Schema
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+#### Groups Table
+- Primary Key: `id` (String)
+- Attributes: `name`, `members[]`, `expenses[]`, `createdAt`, `updatedAt`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+#### Members Table
+- Primary Key: `id` (String)
+- GSI: `GroupIdIndex` - `groupId` (String)
+- Attributes: `name`, `groupId`, `createdAt`, `updatedAt`
+
+#### Expenses Table
+- Primary Key: `id` (String)
+- Attributes: `name`, `amountInCents`, `payerId`, `participants[]`, `groupId`, `createdAt`, `updatedAt`
+
+## Running the app
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+# Development
+yarn run start:dev
+
+# Production
+yarn run build
+yarn run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Testing
 
-## Resources
+```bash
+# Unit tests
+yarn test
 
-Check out a few resources that may come in handy when working with NestJS:
+# Watch mode
+yarn run test:watch
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Test coverage
+yarn run test:cov
 
-## Support
+# E2E tests
+yarn run test:e2e
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Project Structure
 
-## Stay in touch
+### Domain Layer
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+**Entities:**
+- `Group` - Manages members and expenses
+- `Member` - Represents a group member
+- `Expense` - Represents an expense with payer and participants
+
+**Repository Interfaces:**
+- `IGroupRepository` - Group data operations
+- `IMemberRepository` - Member data operations
+- `IExpenseRepository` - Expense data operations
+
+**Custom Exceptions:**
+- `MemberAlreadyExistsError` - Thrown when adding duplicate member
+- `PayerNotMemberError` - Thrown when payer is not in group
+- `ParticipantNotMemberError` - Thrown when participant is not in group
+
+### Infrastructure Layer
+
+**DynamoDB Implementations:**
+- `DynamoDBGroupRepository` - Implements `IGroupRepository`
+- `DynamoDBMemberRepository` - Implements `IMemberRepository`
+- `DynamoDBExpenseRepository` - Implements `IExpenseRepository`
+
+## Key Features
+
+- **Balance Calculation** - Automatically calculates member balances
+- **Remainder Distribution** - Handles expenses that don't divide evenly
+- **Validation** - Ensures all participants and payers are group members
+- **Type Safety** - Full TypeScript support with strict typing
+- **Test Coverage** - Comprehensive unit tests for all entities
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+UNLICENSED
