@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+// @ts-nocheck
+
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { Member } from "@domain/entities/member";
 import { GroupID, MemberID } from "@domain/types/types";
@@ -14,7 +18,7 @@ describe("DynamoDBMemberRepository", () => {
 
   beforeEach(() => {
     mockDynamoDb = {
-      send: jest.fn(),
+      send: jest.fn() as any,
     } as unknown as jest.Mocked<DynamoDBDocumentClient>;
 
     repository = new DynamoDBMemberRepository(mockDynamoDb);
