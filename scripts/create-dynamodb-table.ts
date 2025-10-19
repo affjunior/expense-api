@@ -27,6 +27,7 @@ async function tableExists(tableName: string): Promise<boolean> {
     await client.send(new DescribeTableCommand({ TableName: tableName }));
     return true;
   } catch (error: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (error.name === "ResourceNotFoundException") {
       return false;
     }
@@ -94,4 +95,5 @@ async function main() {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 main();
