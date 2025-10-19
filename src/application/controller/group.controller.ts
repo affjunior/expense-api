@@ -11,9 +11,9 @@ import { CreateGroupDto } from "@application/dto/in/createGroupDto";
 import { CreateExpenseDto } from "@application/dto/in/createExpenseDto";
 import { GroupResponseDto } from "@application/dto/out/groupResponseDto";
 import { GroupBalancesResponseDto } from "@application/dto/out/groupBalancesResponseDto";
-import { CreateGroupUseCase } from "@application/usecase/createGroup.usecase";
-import { AddExpenseUseCase } from "@application/usecase/addExpense.usecase";
-import { GetBalancesUseCase } from "@application/usecase/getBalances.usecase";
+import { CreateGroupUseCase } from "@domain/usecase/createGroup.usecase";
+import { AddExpenseUseCase } from "@domain/usecase/addExpense.usecase";
+import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
 
 @Controller("groups")
 export class GroupController {
