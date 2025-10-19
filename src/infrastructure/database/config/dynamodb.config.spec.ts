@@ -20,9 +20,9 @@ describe("DynamoDBClientFactory", () => {
     mockDynamoDBClient = {} as jest.Mocked<DynamoDBClient>;
     mockDocumentClient = {} as jest.Mocked<DynamoDBDocumentClient>;
 
-    (DynamoDBClient as jest.MockedClass<typeof DynamoDBClient>).mockImplementation(
-      () => mockDynamoDBClient,
-    );
+    (
+      DynamoDBClient as jest.MockedClass<typeof DynamoDBClient>
+    ).mockImplementation(() => mockDynamoDBClient);
     (DynamoDBDocumentClient.from as jest.Mock).mockReturnValue(
       mockDocumentClient,
     );
@@ -120,6 +120,7 @@ describe("DynamoDBClientFactory", () => {
 
       DynamoDBClientFactory.create(config);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(DynamoDBDocumentClient.from).toHaveBeenCalledWith(
         mockDynamoDBClient,
         {
@@ -146,11 +147,22 @@ describe("DynamoDBClientFactory", () => {
 
       DynamoDBClientFactory.create(config);
 
-      const callArgs = (DynamoDBDocumentClient.from as jest.Mock).mock
-        .calls[0];
-      expect(callArgs[1].unmarshallOptions.wrapNumbers).toBe(false);
-      expect(callArgs[1].marshallOptions.removeUndefinedValues).toBe(true);
-      expect(callArgs[1].marshallOptions.convertEmptyValues).toBe(false);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(DynamoDBDocumentClient.from).toHaveBeenCalledWith(
+        mockDynamoDBClient,
+
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          unmarshallOptions: expect.objectContaining({
+            wrapNumbers: false,
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          marshallOptions: expect.objectContaining({
+            removeUndefinedValues: true,
+            convertEmptyValues: false,
+          }),
+        }),
+      );
     });
 
     it("should handle different AWS regions", () => {
@@ -162,7 +174,7 @@ describe("DynamoDBClientFactory", () => {
         "sa-east-1",
       ];
 
-      regions.forEach((region) => {
+      for (const region of regions) {
         jest.clearAllMocks();
         const config: DynamoDBConfig = {
           region,
@@ -176,7 +188,7 @@ describe("DynamoDBClientFactory", () => {
             region,
           }),
         );
-      });
+      }
     });
 
     it("should create new client instance on each call", () => {
@@ -185,10 +197,11 @@ describe("DynamoDBClientFactory", () => {
         endpoint: "http://localhost:8000",
       };
 
-      const client1 = DynamoDBClientFactory.create(config);
-      const client2 = DynamoDBClientFactory.create(config);
+      DynamoDBClientFactory.create(config);
+      DynamoDBClientFactory.create(config);
 
       expect(DynamoDBClient).toHaveBeenCalledTimes(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(DynamoDBDocumentClient.from).toHaveBeenCalledTimes(2);
     });
 

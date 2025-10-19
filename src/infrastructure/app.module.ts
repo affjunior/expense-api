@@ -4,9 +4,9 @@ import { DynamoDBClientFactory } from "./database/config/dynamodb.config";
 import { DynamoDBGroupRepository } from "./repository/dynamodbGroup";
 import { IGroupRepository } from "./repository/interface/groupRepository";
 import { GroupController } from "@application/controller/group.controller";
-import { CreateGroupUseCase } from "@application/usecase/createGroup.usecase";
-import { AddExpenseUseCase } from "@application/usecase/addExpense.usecase";
-import { GetBalancesUseCase } from "@application/usecase/getBalances.usecase";
+import { CreateGroupUseCase } from "@domain/usecase/createGroup.usecase";
+import { AddExpenseUseCase } from "@domain/usecase/addExpense.usecase";
+import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
 
 @Module({
   controllers: [GroupController],
@@ -26,21 +26,24 @@ import { GetBalancesUseCase } from "@application/usecase/getBalances.usecase";
     },
     {
       provide: CreateGroupUseCase,
-      useFactory: (groupRepository: IGroupRepository) => {
+
+      useFactory: (groupRepository: IGroupRepository): CreateGroupUseCase => {
         return new CreateGroupUseCase(groupRepository);
       },
       inject: ["IGroupRepository"],
     },
     {
       provide: AddExpenseUseCase,
-      useFactory: (groupRepository: IGroupRepository) => {
+
+      useFactory: (groupRepository: IGroupRepository): AddExpenseUseCase => {
         return new AddExpenseUseCase(groupRepository);
       },
       inject: ["IGroupRepository"],
     },
     {
       provide: GetBalancesUseCase,
-      useFactory: (groupRepository: IGroupRepository) => {
+
+      useFactory: (groupRepository: IGroupRepository): GetBalancesUseCase => {
         return new GetBalancesUseCase(groupRepository);
       },
       inject: ["IGroupRepository"],
