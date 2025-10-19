@@ -70,10 +70,14 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "node_modules/(?!uuid)"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s",
       "!main.ts",
-      "!**/*.module.ts"
+      "!**/*.module.ts",
+      "!application/dto/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
