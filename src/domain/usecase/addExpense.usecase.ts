@@ -23,7 +23,7 @@ export class AddExpenseUseCase {
       throw new GroupHasNoMembersError(groupId);
     }
 
-    group.addExpense(expense, group);
+    group.addExpense(expense);
 
     const savedGroup = await this.groupRepository.save(group);
 
