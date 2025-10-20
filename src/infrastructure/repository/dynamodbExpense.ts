@@ -10,6 +10,7 @@ import { GroupID } from "@domain/types/types";
 import { TABLE_NAME } from "../database/dynamodb.config";
 import { KeyBuilder, DynamoDBExpenseItem } from "../database/dynamodb.types";
 import { IExpenseRepository } from "./interface/expenseRepository";
+import { CurrencyCode } from "@domain/utils/currency.util";
 
 @Injectable()
 export class DynamoDBExpenseRepository implements IExpenseRepository {
@@ -37,8 +38,7 @@ export class DynamoDBExpenseRepository implements IExpenseRepository {
           item.expenseId as string,
           item.name as string,
           item.amountInCents as number,
-          item.payerId as string,
-          item.participants as string[],
+          item.currencyCode as CurrencyCode,
         ),
     );
   }
@@ -53,8 +53,7 @@ export class DynamoDBExpenseRepository implements IExpenseRepository {
       expenseId: expense.id,
       name: expense.name,
       amountInCents: expense.amountInCents,
-      payerId: expense.payerId,
-      participants: expense.participants,
+      currencyCode: expense.currencyCode,
       createdAt: timestamp,
       updatedAt: timestamp,
     };

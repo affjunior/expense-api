@@ -1,11 +1,5 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  IsArray,
-  ArrayMinSize,
-  Min,
-} from "class-validator";
+import { IsString, IsNotEmpty, IsNumber, Min, IsIn } from "class-validator";
+import { SUPPORTED_CURRENCIES } from "@domain/utils/currency.util";
 
 export class CreateExpenseDto {
   @IsString()
@@ -13,15 +7,11 @@ export class CreateExpenseDto {
   name: string;
 
   @IsNumber()
-  @Min(1)
-  amountInCents: number;
+  @Min(0.01)
+  amount: number;
 
   @IsString()
   @IsNotEmpty()
-  payerId: string;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @IsString({ each: true })
-  participants: string[];
+  @IsIn(SUPPORTED_CURRENCIES)
+  currencyCode: string;
 }

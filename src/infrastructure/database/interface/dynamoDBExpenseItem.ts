@@ -1,3 +1,4 @@
+import { CurrencyCode } from "@domain/utils/currency.util";
 import { DynamoDBBaseItem } from "./dynamoDBBaseItem";
 
 export interface DynamoDBExpenseItem extends DynamoDBBaseItem {
@@ -7,8 +8,7 @@ export interface DynamoDBExpenseItem extends DynamoDBBaseItem {
   expenseId: string;
   name: string;
   amountInCents: number;
-  payerId: string;
-  participants: string[];
+  currencyCode: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,7 +1,10 @@
-import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import type { IGroupRepository } from "@infrastructure/repository/interface/groupRepository";
-import { GroupBalancesResponseDto } from "@application/dto/out/groupBalancesResponseDto";
-import { GroupMapper } from "@application/mapper/group.mapper";
+import { Balance } from "@domain/entities/balance";
+import { GroupNoExistsError } from "@domain/exceptions/GroupNoExistsError";
+import { ExpensesNoExistsError } from "@domain/exceptions/ExpensesNoExistsError";
+import { GroupHasNoMembersError } from "@domain/exceptions/GroupHasNoMembersError";
+import { Group } from "@domain/entities/group";
 
 @Injectable()
 export class GetBalancesUseCase {
@@ -10,13 +13,23 @@ export class GetBalancesUseCase {
     private readonly groupRepository: IGroupRepository,
   ) {}
 
-  async execute(groupId: string): Promise<GroupBalancesResponseDto> {
+  async execute(balance: Balance, groupId: string): Promise<Group> {
     const group = await this.groupRepository.findById(groupId);
 
     if (!group) {
-      throw new NotFoundException(`Group with ID ${groupId} not found`);
+      throw new GroupNoExistsError(groupId);
     }
 
-    return GroupMapper.toBalancesResponseDto(group);
+    if (!group.members.length) {
+      throw new GroupHasNoMembersError(groupId);
+    }
+
+    if (!group.expenses.length) {
+      throw new ExpensesNoExistsError(groupId);
+    }
+
+    group.getBalances();
+
+    return group;
   }
 }

@@ -1,6 +1,7 @@
-export class MemberAlreadyExistsError extends Error {
-  constructor(memberId: string) {
-    super(`Member with ID ${memberId} already exists in this group.`);
-    this.name = "MemberAlreadyExistsError";
+import { ConflictException } from "@nestjs/common";
+
+export class MemberAlreadyExistsError extends ConflictException {
+  constructor(name: string) {
+    super(`Member ${name} already exists`);
   }
 }

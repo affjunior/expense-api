@@ -17,6 +17,7 @@ import {
   DynamoDBExpenseItem,
 } from "../database/dynamodb.types";
 import { IGroupRepository } from "./interface/groupRepository";
+import { CurrencyCode } from "@domain/utils/currency.util";
 
 @Injectable()
 export class DynamoDBGroupRepository implements IGroupRepository {
@@ -79,8 +80,7 @@ export class DynamoDBGroupRepository implements IGroupRepository {
         expenseId: expense.id,
         name: expense.name,
         amountInCents: expense.amountInCents,
-        payerId: expense.payerId,
-        participants: expense.participants,
+        currencyCode: expense.currencyCode,
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -180,8 +180,7 @@ export class DynamoDBGroupRepository implements IGroupRepository {
               item.expenseId as string,
               item.name as string,
               item.amountInCents as number,
-              item.payerId as string,
-              item.participants as string[],
+              item.currencyCode as CurrencyCode,
             ),
           );
           break;
