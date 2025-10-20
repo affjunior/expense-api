@@ -26,17 +26,17 @@ describe("Expense", () => {
       expect(expense.amountInCents).toBe(350);
     });
 
-    it("should create an expense with EUR currency", () => {
-      const expense = new Expense(expenseId, "Group Lunch", 10000, "EUR");
+    it("should create an expense with BRL currency", () => {
+      const expense = new Expense(expenseId, "Group Lunch", 10000, "BRL");
 
-      expect(expense.currencyCode).toBe("EUR");
+      expect(expense.currencyCode).toBe("BRL");
       expect(expense.amountInCents).toBe(10000);
     });
 
-    it("should create an expense with GBP currency", () => {
-      const expense = new Expense(expenseId, "Shared Expense", 2000, "GBP");
+    it("should create an expense with USD currency again", () => {
+      const expense = new Expense(expenseId, "Shared Expense", 2000, "USD");
 
-      expect(expense.currencyCode).toBe("GBP");
+      expect(expense.currencyCode).toBe("USD");
       expect(expense.amountInCents).toBe(2000);
     });
   });
@@ -62,7 +62,7 @@ describe("Expense", () => {
 
     it("should allow currencyCode to be modified", () => {
       const expense = new Expense(expenseId, "Test", 1000, "USD");
-      const newCurrencyCode: CurrencyCode = "EUR";
+      const newCurrencyCode: CurrencyCode = "BRL";
 
       expense.currencyCode = newCurrencyCode;
 
@@ -127,7 +127,7 @@ describe("Expense", () => {
   describe("data integrity", () => {
     it("should maintain separate instances for different expenses", () => {
       const expense1 = new Expense("expense-1", "Expense 1", 1000, "USD");
-      const expense2 = new Expense("expense-2", "Expense 2", 2000, "EUR");
+      const expense2 = new Expense("expense-2", "Expense 2", 2000, "BRL");
 
       expect(expense1.id).not.toBe(expense2.id);
       expect(expense1.name).not.toBe(expense2.name);
@@ -175,16 +175,16 @@ describe("Expense", () => {
       expect(expense.currencyCode).toBe("USD");
     });
 
-    it("should support EUR currency", () => {
-      const expense = new Expense(expenseId, "EUR Expense", 1000, "EUR");
+    it("should support BRL currency", () => {
+      const expense = new Expense(expenseId, "BRL Expense", 1000, "BRL");
 
-      expect(expense.currencyCode).toBe("EUR");
+      expect(expense.currencyCode).toBe("BRL");
     });
 
-    it("should support GBP currency", () => {
-      const expense = new Expense(expenseId, "GBP Expense", 1000, "GBP");
+    it("should support USD currency again", () => {
+      const expense = new Expense(expenseId, "USD Expense", 1000, "USD");
 
-      expect(expense.currencyCode).toBe("GBP");
+      expect(expense.currencyCode).toBe("USD");
     });
   });
 });

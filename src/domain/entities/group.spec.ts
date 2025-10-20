@@ -164,13 +164,13 @@ describe("Group", () => {
     });
 
     it("should allow expense with different currencies", () => {
-      const eurExpense = new Expense("expense-2", "EUR Expense", 600, "EUR");
+      const brlExpense = new Expense("expense-2", "BRL Expense", 600, "BRL");
 
       expect(() => {
-        group.addExpense(eurExpense);
+        group.addExpense(brlExpense);
       }).not.toThrow();
 
-      expect(group.expenses).toContain(eurExpense);
+      expect(group.expenses).toContain(brlExpense);
     });
 
     it("should allow expense with zero amount", () => {

@@ -41,10 +41,6 @@ describe("CreateGroupUseCase", () => {
     it("should create a group successfully", async () => {
       const dto: CreateGroupDto = {
         name: "Trip to Europe",
-        members: [
-          { id: "member-1", name: "Alice" },
-          { id: "member-2", name: "Bob" },
-        ],
       };
 
       const savedGroup = new Group("group-123", "Trip to Europe");
@@ -67,7 +63,6 @@ describe("CreateGroupUseCase", () => {
     it("should call repository save with correct group", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [{ id: "m1", name: "Member 1" }],
       };
 
       const savedGroup = new Group("group-id", "Test Group");
@@ -88,7 +83,6 @@ describe("CreateGroupUseCase", () => {
     it("should generate UUID for new group", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [],
       };
 
       const savedGroup = new Group("generated-uuid", "Test Group");
@@ -103,7 +97,6 @@ describe("CreateGroupUseCase", () => {
     it("should handle group with no members", async () => {
       const dto: CreateGroupDto = {
         name: "Solo Group",
-        members: [],
       };
 
       const savedGroup = new Group("group-id", "Solo Group");
@@ -142,7 +135,6 @@ describe("CreateGroupUseCase", () => {
     it("should return GroupResponseDto with correct structure", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [{ id: "m1", name: "Alice" }],
       };
 
       const savedGroup = new Group("group-id", "Test Group");
@@ -163,7 +155,6 @@ describe("CreateGroupUseCase", () => {
     it("should create group with empty expenses array", async () => {
       const dto: CreateGroupDto = {
         name: "New Group",
-        members: [],
       };
 
       const savedGroup = new Group("group-id", "New Group");
@@ -178,7 +169,6 @@ describe("CreateGroupUseCase", () => {
     it("should propagate repository errors", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [],
       };
 
       const error = new Error("Database connection failed");
@@ -192,7 +182,6 @@ describe("CreateGroupUseCase", () => {
     it("should handle special characters in group name", async () => {
       const dto: CreateGroupDto = {
         name: "Trip to Tōkyō & Paris (2024)",
-        members: [],
       };
 
       const savedGroup = new Group("group-id", "Trip to Tōkyō & Paris (2024)");
@@ -206,10 +195,6 @@ describe("CreateGroupUseCase", () => {
     it("should handle special characters in member names", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [
-          { id: "m1", name: "José García" },
-          { id: "m2", name: "François Müller" },
-        ],
       };
 
       const savedGroup = new Group("group-id", "Test Group");

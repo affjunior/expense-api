@@ -9,7 +9,6 @@ import { AddMemberUseCase } from "@domain/usecase/addMember.usecase";
 import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
 import { CreateGroupDto } from "@application/dto/in/createGroupDto";
 import { CreateExpenseDto } from "@application/dto/in/createExpenseDto";
-import { GroupResponseDto } from "@application/dto/out/groupResponseDto";
 import { Group } from "@domain/entities/group";
 
 describe("GroupController", () => {
@@ -71,13 +70,9 @@ describe("GroupController", () => {
     it("should create a group successfully", async () => {
       const dto: CreateGroupDto = {
         name: "Trip to Europe",
-        members: [
-          { id: "m1", name: "Alice" },
-          { id: "m2", name: "Bob" },
-        ],
       };
 
-      const expectedResponse: GroupResponseDto = {
+      const mockGroup = {
         id: "group-123",
         name: "Trip to Europe",
         members: [
@@ -85,13 +80,19 @@ describe("GroupController", () => {
           { id: "m2", name: "Bob" },
         ],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(expectedResponse);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.createGroup(dto);
 
-      expect(result).toEqual(expectedResponse);
+      expect(result.id).toBe("group-123");
+      expect(result.name).toBe("Trip to Europe");
       expect(createGroupUseCase.execute).toHaveBeenCalledTimes(1);
       expect(createGroupUseCase.execute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -103,17 +104,21 @@ describe("GroupController", () => {
     it("should pass DTO to use case correctly", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [],
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: "group-id",
         name: "Test Group",
         members: [],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(response);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       await controller.createGroup(dto);
 
@@ -127,17 +132,21 @@ describe("GroupController", () => {
     it("should return GroupResponseDto", async () => {
       const dto: CreateGroupDto = {
         name: "Test",
-        members: [],
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: "group-id",
         name: "Test",
         members: [],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(response);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.createGroup(dto);
 
@@ -150,7 +159,6 @@ describe("GroupController", () => {
     it("should propagate errors from use case", async () => {
       const dto: CreateGroupDto = {
         name: "Test",
-        members: [],
       };
 
       const error = new Error("Database error");
@@ -164,21 +172,25 @@ describe("GroupController", () => {
     it("should handle group with multiple members", async () => {
       const dto: CreateGroupDto = {
         name: "Large Group",
+      };
+
+      const mockGroup = {
+        id: "group-id",
+        name: "Large Group",
         members: [
           { id: "m1", name: "Alice" },
           { id: "m2", name: "Bob" },
           { id: "m3", name: "Charlie" },
         ],
-      };
-
-      const response: GroupResponseDto = {
-        id: "group-id",
-        name: "Large Group",
-        members: dto.members as Array<{ id: string; name: string }>,
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(response);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.createGroup(dto);
 
@@ -188,17 +200,21 @@ describe("GroupController", () => {
     it("should handle empty members array", async () => {
       const dto: CreateGroupDto = {
         name: "Solo Group",
-        members: [],
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: "group-id",
         name: "Solo Group",
         members: [],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(response);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.createGroup(dto);
 
@@ -208,17 +224,21 @@ describe("GroupController", () => {
     it("should handle special characters in group name", async () => {
       const dto: CreateGroupDto = {
         name: "Trip to Tōkyō & Paris (2024)",
-        members: [],
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: "group-id",
         name: "Trip to Tōkyō & Paris (2024)",
         members: [],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      createGroupUseCase.execute.mockResolvedValue(response);
+      createGroupUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.createGroup(dto);
 
@@ -232,12 +252,11 @@ describe("GroupController", () => {
     it("should add expense to group successfully", async () => {
       const dto: CreateExpenseDto = {
         name: "Dinner",
-        amountInCents: 5000,
-        payerId: "m1",
-        participants: ["m1", "m2"],
+        amount: 50,
+        currencyCode: "USD",
       };
 
-      const expectedResponse: GroupResponseDto = {
+      const mockGroup = {
         id: groupId,
         name: "Trip",
         members: [
@@ -248,18 +267,23 @@ describe("GroupController", () => {
           {
             id: "expense-1",
             name: "Dinner",
-            amount: 50,
             amountInCents: 5000,
             currencyCode: "USD",
           },
         ],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(expectedResponse);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.addExpense(groupId, dto);
 
-      expect(result).toEqual(expectedResponse);
+      expect(result.id).toBe(groupId);
+      expect(result.expenses).toHaveLength(1);
       expect(addExpenseUseCase.execute).toHaveBeenCalledTimes(1);
       expect(addExpenseUseCase.execute).toHaveBeenCalledWith(
         groupId,
@@ -272,19 +296,23 @@ describe("GroupController", () => {
     it("should pass groupId and DTO to use case correctly", async () => {
       const dto: CreateExpenseDto = {
         name: "Lunch",
-        amountInCents: 3000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 30,
+        currencyCode: "USD",
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: groupId,
         name: "Trip",
         members: [{ id: "m1", name: "Alice" }],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(response);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       await controller.addExpense(groupId, dto);
 
@@ -299,12 +327,11 @@ describe("GroupController", () => {
     it("should return GroupResponseDto", async () => {
       const dto: CreateExpenseDto = {
         name: "Test",
-        amountInCents: 1000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 10,
+        currencyCode: "USD",
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: groupId,
         name: "Trip",
         members: [{ id: "m1", name: "Alice" }],
@@ -313,13 +340,17 @@ describe("GroupController", () => {
             id: "e1",
             name: "Test",
             amountInCents: 1000,
-            payerId: "m1",
-            participants: ["m1"],
+            currencyCode: "USD",
           },
         ],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(response);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.addExpense(groupId, dto);
 
@@ -332,9 +363,8 @@ describe("GroupController", () => {
     it("should throw NotFoundException when group not found", async () => {
       const dto: CreateExpenseDto = {
         name: "Test",
-        amountInCents: 1000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 10,
+        currencyCode: "USD",
       };
 
       addExpenseUseCase.execute.mockRejectedValue(
@@ -349,9 +379,8 @@ describe("GroupController", () => {
     it("should propagate errors from use case", async () => {
       const dto: CreateExpenseDto = {
         name: "Test",
-        amountInCents: 1000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 10,
+        currencyCode: "USD",
       };
 
       const error = new Error("Database error");
@@ -369,7 +398,7 @@ describe("GroupController", () => {
         currencyCode: "USD",
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: groupId,
         name: "Trip",
         members: [
@@ -381,14 +410,18 @@ describe("GroupController", () => {
           {
             id: "e1",
             name: "Group Dinner",
-            amount: 90,
             amountInCents: 9000,
             currencyCode: "USD",
           },
         ],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(response);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.addExpense(groupId, dto);
 
@@ -398,12 +431,11 @@ describe("GroupController", () => {
     it("should handle large expense amounts", async () => {
       const dto: CreateExpenseDto = {
         name: "Expensive Item",
-        amountInCents: 1000000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 10000,
+        currencyCode: "USD",
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: groupId,
         name: "Trip",
         members: [{ id: "m1", name: "Alice" }],
@@ -412,13 +444,17 @@ describe("GroupController", () => {
             id: "e1",
             name: "Expensive Item",
             amountInCents: 1000000,
-            payerId: "m1",
-            participants: ["m1"],
+            currencyCode: "USD",
           },
         ],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(response);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.addExpense(groupId, dto);
 
@@ -429,19 +465,23 @@ describe("GroupController", () => {
       const differentGroupId = "different-group-456";
       const dto: CreateExpenseDto = {
         name: "Test",
-        amountInCents: 1000,
-        payerId: "m1",
-        participants: ["m1"],
+        amount: 10,
+        currencyCode: "USD",
       };
 
-      const response: GroupResponseDto = {
+      const mockGroup = {
         id: differentGroupId,
         name: "Different Trip",
         members: [{ id: "m1", name: "Alice" }],
         expenses: [],
+        addMember: jest.fn(),
+        addExpense: jest.fn(),
+        getBalances: jest.fn(),
       };
 
-      addExpenseUseCase.execute.mockResolvedValue(response);
+      addExpenseUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       await controller.addExpense(differentGroupId, dto);
 
