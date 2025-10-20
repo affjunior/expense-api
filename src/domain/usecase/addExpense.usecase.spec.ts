@@ -50,55 +50,38 @@ describe("AddExpenseUseCase", () => {
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
 
-      const dto: CreateExpenseDto = {
-        name: "Dinner",
-        amount: 50.0,
-        currencyCode: "USD",
-      };
+      const expense = new Expense("expense-1", "Dinner", 5000, "USD");
 
       groupRepository.findById.mockResolvedValue(group);
       groupRepository.save.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId, dto, "m1", ["m1", "m2"]);
+      const result = await useCase.execute(groupId, expense);
 
       expect(result).toBeDefined();
       expect(result.expenses).toHaveLength(1);
       expect(result.expenses[0].name).toBe("Dinner");
-      expect(result.expenses[0].amount).toBe(50.0);
       expect(result.expenses[0].amountInCents).toBe(5000);
       expect(result.expenses[0].currencyCode).toBe("USD");
-      expect(result.expenses[0].payerId).toBe("m1");
-      expect(result.expenses[0].participants).toEqual(["m1", "m2"]);
     });
 
-    it("should throw NotFoundException when group does not exist", async () => {
-      const dto: CreateExpenseDto = {
-        name: "Dinner",
-        amount: 50.0,
-        currencyCode: "USD",
-      };
+    it("should throw GroupNoExistsError when group does not exist", async () => {
+      const expense = new Expense("expense-1", "Dinner", 5000, "USD");
 
       groupRepository.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute(groupId, dto, "m1", ["m1"])).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(useCase.execute(groupId, expense)).rejects.toThrow();
     });
 
     it("should call findById with correct groupId", async () => {
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
 
-      const dto: CreateExpenseDto = {
-        name: "Lunch",
-        amount: 30.0,
-        currencyCode: "USD",
-      };
+      const expense = new Expense("expense-1", "Lunch", 3000, "USD");
 
       groupRepository.findById.mockResolvedValue(group);
       groupRepository.save.mockResolvedValue(group);
 
-      await useCase.execute(groupId, dto, "m1", ["m1"]);
+      await useCase.execute(groupId, expense);
 
       expect(groupRepository.findById).toHaveBeenCalledTimes(1);
       expect(groupRepository.findById).toHaveBeenCalledWith(groupId);

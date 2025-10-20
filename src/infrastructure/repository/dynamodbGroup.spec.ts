@@ -17,10 +17,7 @@ describe("DynamoDBGroupRepository", () => {
   const groupId: GroupID = "group-123";
   const member1 = new Member("member-1", "Alice");
   const member2 = new Member("member-2", "Bob");
-  const expense1 = new Expense("expense-1", "Dinner", 5000, "member-1", [
-    "member-1",
-    "member-2",
-  ]);
+  const expense1 = new Expense("expense-1", "Dinner", 5000, "USD");
 
   beforeEach(() => {
     mockDynamoDb = {
@@ -136,8 +133,7 @@ describe("DynamoDBGroupRepository", () => {
             expenseId: "expense-1",
             name: "Dinner",
             amountInCents: 5000,
-            payerId: "member-1",
-            participants: ["member-1", "member-2"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -151,11 +147,7 @@ describe("DynamoDBGroupRepository", () => {
       expect(result?.expenses[0].id).toBe("expense-1");
       expect(result?.expenses[0].name).toBe("Dinner");
       expect(result?.expenses[0].amountInCents).toBe(5000);
-      expect(result?.expenses[0].payerId).toBe("member-1");
-      expect(result?.expenses[0].participants).toEqual([
-        "member-1",
-        "member-2",
-      ]);
+      expect(result?.expenses[0].currencyCode).toBe("USD");
     });
 
     it("should return complete group with members and expenses", async () => {
@@ -186,8 +178,7 @@ describe("DynamoDBGroupRepository", () => {
             expenseId: "expense-1",
             name: "Dinner",
             amountInCents: 5000,
-            payerId: "member-1",
-            participants: ["member-1"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -324,8 +315,7 @@ describe("DynamoDBGroupRepository", () => {
       expect(expenseItem?.expenseId).toBe("expense-1");
       expect(expenseItem?.name).toBe("Dinner");
       expect(expenseItem?.amountInCents).toBe(5000);
-      expect(expenseItem?.payerId).toBe("member-1");
-      expect(expenseItem?.participants).toEqual(["member-1", "member-2"]);
+      expect(expenseItem?.currencyCode).toBe("USD");
     });
 
     it("should handle batch writes in chunks of 25", async () => {
@@ -441,8 +431,7 @@ describe("DynamoDBGroupRepository", () => {
             expenseId: "expense-1",
             name: "Dinner",
             amountInCents: 5000,
-            payerId: "member-1",
-            participants: ["member-1"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },

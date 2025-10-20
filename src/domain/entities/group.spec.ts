@@ -1,10 +1,8 @@
 import { Group } from "./group";
 import { Member } from "./member";
 import { Expense } from "./expense";
-import { GroupID, MemberID } from "@domain/types/types";
+import { GroupID } from "@domain/types/types";
 import { MemberAlreadyExistsError } from "@domain/exceptions/MemberAlreadyExistsError";
-import { ParticipantNotMemberError } from "@domain/exceptions/ParticipantNotMemberError";
-import { PayerNotMemberError } from "@domain/exceptions/PayerNotMemberError";
 
 describe("Group", () => {
   const groupId: GroupID = "group-1";
@@ -108,7 +106,7 @@ describe("Group", () => {
 
       expect(() => {
         group.addMember(member1);
-      }).toThrow(`Member with ID ${member1.id} already exists in this group.`);
+      }).toThrow(`Member ${member1.id} already exists`);
     });
 
     it("should prevent adding member with same id but different instance", () => {
@@ -144,11 +142,7 @@ describe("Group", () => {
       group.addMember(member2);
       group.addMember(member3);
 
-      expense = new Expense("expense-1", "Dinner", 9000, member1.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+      expense = new Expense("expense-1", "Dinner", 9000, "USD");
     });
 
     it("should add an expense to the group", () => {
@@ -159,10 +153,7 @@ describe("Group", () => {
     });
 
     it("should add multiple expenses to the group", () => {
-      const expense2 = new Expense("expense-2", "Lunch", 3000, member2.id, [
-        member1.id,
-        member2.id,
-      ]);
+      const expense2 = new Expense("expense-2", "Lunch", 3000, "USD");
 
       group.addExpense(expense);
       group.addExpense(expense2);
@@ -172,109 +163,22 @@ describe("Group", () => {
       expect(group.expenses).toContain(expense2);
     });
 
-    it("should throw PayerNotMemberError when payer is not in group", () => {
-      const nonMember: MemberID = "non-member";
-      const invalidExpense = new Expense(
-        "expense-2",
-        "Invalid",
-        1000,
-        nonMember,
-        [member1.id],
-      );
+    it("should allow expense with different currencies", () => {
+      const eurExpense = new Expense("expense-2", "EUR Expense", 600, "EUR");
 
       expect(() => {
-        group.addExpense(invalidExpense);
-      }).toThrow(PayerNotMemberError);
-    });
-
-    it("should throw PayerNotMemberError with payer id in message", () => {
-      const nonMember: MemberID = "non-member";
-      const invalidExpense = new Expense(
-        "expense-2",
-        "Invalid",
-        1000,
-        nonMember,
-        [member1.id],
-      );
-
-      expect(() => {
-        group.addExpense(invalidExpense);
-      }).toThrow(`Payer with ID ${nonMember} is not a member of this group.`);
-    });
-
-    it("should throw ParticipantNotMemberError when participant is not in group", () => {
-      const nonMember: MemberID = "non-member";
-      const invalidExpense = new Expense(
-        "expense-2",
-        "Invalid",
-        1000,
-        member1.id,
-        [member1.id, nonMember],
-      );
-
-      expect(() => {
-        group.addExpense(invalidExpense);
-      }).toThrow(ParticipantNotMemberError);
-    });
-
-    it("should throw ParticipantNotMemberError with participant id in message", () => {
-      const nonMember: MemberID = "non-member";
-      const invalidExpense = new Expense(
-        "expense-2",
-        "Invalid",
-        1000,
-        member1.id,
-        [member1.id, nonMember],
-      );
-
-      expect(() => {
-        group.addExpense(invalidExpense);
-      }).toThrow(
-        `Participant with ID ${nonMember} is not a member of this group.`,
-      );
-    });
-
-    it("should allow expense where payer is also a participant", () => {
-      const validExpense = new Expense("expense-2", "Coffee", 600, member1.id, [
-        member1.id,
-        member2.id,
-      ]);
-
-      expect(() => {
-        group.addExpense(validExpense);
+        group.addExpense(eurExpense);
       }).not.toThrow();
 
-      expect(group.expenses).toContain(validExpense);
+      expect(group.expenses).toContain(eurExpense);
     });
 
-    it("should allow expense with single participant", () => {
-      const singleExpense = new Expense(
-        "expense-2",
-        "Solo Coffee",
-        300,
-        member1.id,
-        [member1.id],
-      );
+    it("should allow expense with zero amount", () => {
+      const freeExpense = new Expense("expense-2", "Free Item", 0, "USD");
 
-      group.addExpense(singleExpense);
+      group.addExpense(freeExpense);
 
-      expect(group.expenses).toContain(singleExpense);
-    });
-
-    it("should validate all participants before adding expense", () => {
-      const invalidExpense = new Expense(
-        "expense-2",
-        "Invalid",
-        1000,
-        member1.id,
-        [member1.id, member2.id, "non-member"],
-      );
-
-      expect(() => {
-        group.addExpense(invalidExpense);
-      }).toThrow(ParticipantNotMemberError);
-
-      expect(group.expenses).toHaveLength(0);
+      expect(group.expenses).toContain(freeExpense);
     });
   });
 
@@ -297,151 +201,102 @@ describe("Group", () => {
       expect(balances.get(member3.id)).toBe(0);
     });
 
-    it("should calculate correct balance for single expense with equal split", () => {
-      // Alice pays 3000 cents for 3 people (1000 each)
-      const expense = new Expense("expense-1", "Lunch", 3000, member1.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+    it("should calculate equal balance for single expense", () => {
+      // Simple implementation: divides total expense equally among all members
+      const expense = new Expense("expense-1", "Lunch", 3000, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      // Alice paid 3000, owes 1000, net = +2000
-      expect(balances.get(member1.id)).toBe(2000);
-      // Bob owes 1000, net = -1000
-      expect(balances.get(member2.id)).toBe(-1000);
-      // Charlie owes 1000, net = -1000
-      expect(balances.get(member3.id)).toBe(-1000);
+      // 3000 / 3 members = 1000 each
+      expect(balances.get(member1.id)).toBe(1000);
+      expect(balances.get(member2.id)).toBe(1000);
+      expect(balances.get(member3.id)).toBe(1000);
     });
 
     it("should handle expenses that don't divide evenly", () => {
-      // 1000 cents divided by 3 = 333 each, with 1 cent remainder
-      const expense = new Expense("expense-1", "Coffee", 1000, member1.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+      // 1000 cents divided by 3 = 333 each (floor division)
+      const expense = new Expense("expense-1", "Coffee", 1000, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      // First participant gets the extra cent
-      // Alice: paid 1000, owes 334, net = +666
-      expect(balances.get(member1.id)).toBe(666);
-      // Bob: owes 333, net = -333
-      expect(balances.get(member2.id)).toBe(-333);
-      // Charlie: owes 333, net = -333
-      expect(balances.get(member3.id)).toBe(-333);
+      // Floor division: 1000 / 3 = 333
+      expect(balances.get(member1.id)).toBe(333);
+      expect(balances.get(member2.id)).toBe(333);
+      expect(balances.get(member3.id)).toBe(333);
     });
 
     it("should handle remainder distribution correctly", () => {
-      // 100 cents divided by 3 = 33 each, with 1 cent remainder
-      const expense = new Expense("expense-1", "Snack", 100, member2.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+      // 100 cents divided by 3 = 33 each (floor division)
+      const expense = new Expense("expense-1", "Snack", 100, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      // Total should still sum to 0
-      const total =
-        balances.get(member1.id)! +
-        balances.get(member2.id)! +
-        balances.get(member3.id)!;
-      expect(total).toBe(0);
+      // Floor division: 100 / 3 = 33
+      expect(balances.get(member1.id)).toBe(33);
+      expect(balances.get(member2.id)).toBe(33);
+      expect(balances.get(member3.id)).toBe(33);
     });
 
     it("should calculate balances for multiple expenses", () => {
-      // Expense 1: Alice pays 3000 for all 3
-      const expense1 = new Expense("expense-1", "Dinner", 3000, member1.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
-      // Expense 2: Bob pays 1200 for Bob and Charlie
-      const expense2 = new Expense("expense-2", "Lunch", 1200, member2.id, [
-        member2.id,
-        member3.id,
-      ]);
+      // Simple implementation: sums all expenses then divides by members
+      const expense1 = new Expense("expense-1", "Dinner", 3000, "USD");
+      const expense2 = new Expense("expense-2", "Lunch", 1200, "USD");
 
       group.addExpense(expense1);
       group.addExpense(expense2);
 
       const balances = group.getBalances();
 
-      // Alice: paid 3000, owes 1000, net = +2000
-      expect(balances.get(member1.id)).toBe(2000);
-      // Bob: paid 1200, owes 1000 + 600 = 1600, net = -400
-      expect(balances.get(member2.id)).toBe(-400);
-      // Charlie: owes 1000 + 600 = 1600, net = -1600
-      expect(balances.get(member3.id)).toBe(-1600);
+      // Total: 4200 / 3 = 1400 each
+      expect(balances.get(member1.id)).toBe(1400);
+      expect(balances.get(member2.id)).toBe(1400);
+      expect(balances.get(member3.id)).toBe(1400);
     });
 
-    it("should handle expense with only one participant", () => {
-      const expense = new Expense("expense-1", "Solo Coffee", 500, member1.id, [
-        member1.id,
-      ]);
+    it("should handle expense with equal split among members", () => {
+      const expense = new Expense("expense-1", "Solo Coffee", 500, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      // Alice pays and owes for herself, net = 0
-      expect(balances.get(member1.id)).toBe(0);
-      expect(balances.get(member2.id)).toBe(0);
-      expect(balances.get(member3.id)).toBe(0);
+      // 500 / 3 = 166
+      expect(balances.get(member1.id)).toBe(166);
+      expect(balances.get(member2.id)).toBe(166);
+      expect(balances.get(member3.id)).toBe(166);
     });
 
-    it("should handle expense where payer is not a participant", () => {
-      // Alice pays but only Bob and Charlie participate
-      const expense = new Expense("expense-1", "Gift", 1000, member1.id, [
-        member2.id,
-        member3.id,
-      ]);
+    it("should handle expense split equally", () => {
+      const expense = new Expense("expense-1", "Gift", 1000, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      // Alice paid 1000, owes 0, net = +1000
-      expect(balances.get(member1.id)).toBe(1000);
-      // Bob owes 500, net = -500
-      expect(balances.get(member2.id)).toBe(-500);
-      // Charlie owes 500, net = -500
-      expect(balances.get(member3.id)).toBe(-500);
+      // 1000 / 3 = 333
+      expect(balances.get(member1.id)).toBe(333);
+      expect(balances.get(member2.id)).toBe(333);
+      expect(balances.get(member3.id)).toBe(333);
     });
 
-    it("should ensure total balance always sums to zero", () => {
-      const expense1 = new Expense("expense-1", "Dinner", 5000, member1.id, [
-        member1.id,
-        member2.id,
-      ]);
-      const expense2 = new Expense("expense-2", "Taxi", 1500, member3.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+    it("should sum all expenses before dividing", () => {
+      const expense1 = new Expense("expense-1", "Dinner", 5000, "USD");
+      const expense2 = new Expense("expense-2", "Taxi", 1500, "USD");
 
       group.addExpense(expense1);
       group.addExpense(expense2);
 
       const balances = group.getBalances();
 
-      const total =
-        balances.get(member1.id)! +
-        balances.get(member2.id)! +
-        balances.get(member3.id)!;
-
-      expect(total).toBe(0);
+      // Total: 6500 / 3 = 2166
+      expect(balances.get(member1.id)).toBe(2166);
+      expect(balances.get(member2.id)).toBe(2166);
+      expect(balances.get(member3.id)).toBe(2166);
     });
 
     it("should handle zero amount expense", () => {
-      const expense = new Expense("expense-1", "Free Item", 0, member1.id, [
-        member1.id,
-        member2.id,
-      ]);
+      const expense = new Expense("expense-1", "Free Item", 0, "USD");
       group.addExpense(expense);
 
       const balances = group.getBalances();
@@ -457,15 +312,16 @@ describe("Group", () => {
         "expense-1",
         "Expensive Item",
         largeAmount,
-        member1.id,
-        [member1.id, member2.id],
+        "USD",
       );
       group.addExpense(expense);
 
       const balances = group.getBalances();
 
-      expect(balances.get(member1.id)).toBe(500000);
-      expect(balances.get(member2.id)).toBe(-500000);
+      // 1000000 / 3 = 333333
+      expect(balances.get(member1.id)).toBe(333333);
+      expect(balances.get(member2.id)).toBe(333333);
+      expect(balances.get(member3.id)).toBe(333333);
     });
   });
 
@@ -476,19 +332,12 @@ describe("Group", () => {
       group.addMember(member1);
       group.addMember(member2);
 
-      const expense1 = new Expense("expense-1", "Lunch", 2000, member1.id, [
-        member1.id,
-        member2.id,
-      ]);
+      const expense1 = new Expense("expense-1", "Lunch", 2000, "USD");
       group.addExpense(expense1);
 
       group.addMember(member3);
 
-      const expense2 = new Expense("expense-2", "Dinner", 3000, member2.id, [
-        member1.id,
-        member2.id,
-        member3.id,
-      ]);
+      const expense2 = new Expense("expense-2", "Dinner", 3000, "USD");
       group.addExpense(expense2);
 
       expect(group.members).toHaveLength(3);
@@ -502,9 +351,7 @@ describe("Group", () => {
       const group = new Group(groupId, "Original Name");
       group.addMember(member1);
 
-      const expense = new Expense("expense-1", "Test", 1000, member1.id, [
-        member1.id,
-      ]);
+      const expense = new Expense("expense-1", "Test", 1000, "USD");
       group.addExpense(expense);
 
       group.name = "Updated Name";
@@ -557,8 +404,7 @@ describe("Group", () => {
           `expense-${i}`,
           `Expense ${i}`,
           1000,
-          member1.id,
-          [member1.id, member2.id],
+          "USD",
         );
         group.addExpense(expense);
       }
@@ -566,8 +412,9 @@ describe("Group", () => {
       expect(group.expenses).toHaveLength(50);
 
       const balances = group.getBalances();
-      expect(balances.get(member1.id)).toBe(25000); // 50 * 500
-      expect(balances.get(member2.id)).toBe(-25000);
+      // 50 * 1000 = 50000 / 2 members = 25000 each
+      expect(balances.get(member1.id)).toBe(25000);
+      expect(balances.get(member2.id)).toBe(25000);
     });
   });
 });

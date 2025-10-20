@@ -74,7 +74,6 @@ describe("CreateGroupUseCase", () => {
       };
 
       const savedGroup = new Group("group-id", "Test Group");
-      savedGroup.addMember(new Member("m1", "Member 1"));
 
       groupRepository.save.mockResolvedValue(savedGroup);
 
@@ -84,12 +83,7 @@ describe("CreateGroupUseCase", () => {
       expect(groupRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Test Group",
-          members: expect.arrayContaining([
-            expect.objectContaining({
-              id: "m1",
-              name: "Member 1",
-            }),
-          ]),
+          members: [],
         }),
       );
     });
