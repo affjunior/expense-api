@@ -2,11 +2,14 @@ import { Module } from "@nestjs/common";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClientFactory } from "./database/config/dynamodb.config";
 import { DynamoDBGroupRepository } from "./repository/dynamodbGroup";
+import { DynamoDBMemberRepository } from "./repository/dynamodbMember";
 import { IGroupRepository } from "./repository/interface/groupRepository";
+import { IMemberRepository } from "./repository/interface/memberRepository";
 import { GroupController } from "@application/controller/group.controller";
 import { CreateGroupUseCase } from "@domain/usecase/createGroup.usecase";
 import { AddExpenseUseCase } from "@domain/usecase/addExpense.usecase";
 import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
+import { AddMemberUseCase } from "@domain/usecase/addMember.usecase";
 
 @Module({
   controllers: [GroupController],
@@ -23,6 +26,10 @@ import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
     {
       provide: "IGroupRepository",
       useClass: DynamoDBGroupRepository,
+    },
+    {
+      provide: "IMemberRepository",
+      useClass: DynamoDBMemberRepository,
     },
     {
       provide: CreateGroupUseCase,
@@ -47,6 +54,17 @@ import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
         return new GetBalancesUseCase(groupRepository);
       },
       inject: ["IGroupRepository"],
+    },
+    {
+      provide: AddMemberUseCase,
+
+      useFactory: (
+        groupRepository: IGroupRepository,
+        memberRepository: IMemberRepository,
+      ): AddMemberUseCase => {
+        return new AddMemberUseCase(groupRepository, memberRepository);
+      },
+      inject: ["IGroupRepository", "IMemberRepository"],
     },
   ],
 })

@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import type { IGroupRepository } from "@infrastructure/repository/interface/groupRepository";
-import { CreateExpenseDto } from "@application/dto/in/createExpenseDto";
-import { GroupResponseDto } from "@application/dto/out/groupResponseDto";
-import { GroupMapper } from "@application/mapper/group.mapper";
-import { v4 as uuidv4 } from "uuid";
+import { Expense } from "@domain/entities/expense";
+import { GroupHasNoMembersError } from "@domain/exceptions/GroupHasNoMembersError";
+import { GroupNoExistsError } from "@domain/exceptions/GroupNoExistsError";
+import { Group } from "@domain/entities/group";
 
 @Injectable()
 export class AddExpenseUseCase {
@@ -12,23 +12,21 @@ export class AddExpenseUseCase {
     private readonly groupRepository: IGroupRepository,
   ) {}
 
-  async execute(
-    groupId: string,
-    dto: CreateExpenseDto,
-  ): Promise<GroupResponseDto> {
+  async execute(groupId: string, expense: Expense): Promise<Group> {
     const group = await this.groupRepository.findById(groupId);
 
     if (!group) {
-      throw new NotFoundException(`Group with ID ${groupId} not found`);
+      throw new GroupNoExistsError(groupId);
     }
 
-    const expenseId = uuidv4();
-    const expense = GroupMapper.expenseToDomain(dto, expenseId);
+    if (group.members.length === 0) {
+      throw new GroupHasNoMembersError(groupId);
+    }
 
     group.addExpense(expense);
 
     const savedGroup = await this.groupRepository.save(group);
 
-    return GroupMapper.toResponseDto(savedGroup);
+    return savedGroup;
   }
 }

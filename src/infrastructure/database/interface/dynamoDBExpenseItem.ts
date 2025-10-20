@@ -7,8 +7,7 @@ export interface DynamoDBExpenseItem extends DynamoDBBaseItem {
   expenseId: string;
   name: string;
   amountInCents: number;
-  payerId: string;
-  participants: string[];
+  currencyCode: string;
   createdAt: string;
   updatedAt: string;
 }

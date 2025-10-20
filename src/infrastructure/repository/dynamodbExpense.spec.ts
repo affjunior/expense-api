@@ -13,14 +13,8 @@ describe("DynamoDBExpenseRepository", () => {
   let mockDynamoDb: jest.Mocked<DynamoDBDocumentClient>;
 
   const groupId: GroupID = "group-123";
-  const expense1 = new Expense("expense-1", "Dinner", 5000, "member-1", [
-    "member-1",
-    "member-2",
-  ]);
-  const expense2 = new Expense("expense-2", "Lunch", 3000, "member-2", [
-    "member-2",
-    "member-3",
-  ]);
+  const expense1 = new Expense("expense-1", "Dinner", 5000, "USD");
+  const expense2 = new Expense("expense-2", "Lunch", 3000, "USD");
 
   beforeEach(() => {
     mockDynamoDb = {
@@ -60,8 +54,7 @@ describe("DynamoDBExpenseRepository", () => {
             expenseId: "expense-1",
             name: "Dinner",
             amountInCents: 5000,
-            payerId: "member-1",
-            participants: ["member-1", "member-2"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -75,8 +68,7 @@ describe("DynamoDBExpenseRepository", () => {
       expect(result[0].id).toBe("expense-1");
       expect(result[0].name).toBe("Dinner");
       expect(result[0].amountInCents).toBe(5000);
-      expect(result[0].payerId).toBe("member-1");
-      expect(result[0].participants).toEqual(["member-1", "member-2"]);
+      expect(result[0].currencyCode).toBe("USD");
     });
 
     it("should return multiple expenses when found", async () => {
@@ -89,8 +81,7 @@ describe("DynamoDBExpenseRepository", () => {
             expenseId: "expense-1",
             name: "Dinner",
             amountInCents: 5000,
-            payerId: "member-1",
-            participants: ["member-1", "member-2"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -101,8 +92,7 @@ describe("DynamoDBExpenseRepository", () => {
             expenseId: "expense-2",
             name: "Lunch",
             amountInCents: 3000,
-            payerId: "member-2",
-            participants: ["member-2", "member-3"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -131,7 +121,7 @@ describe("DynamoDBExpenseRepository", () => {
       });
     });
 
-    it("should handle expense with single participant", async () => {
+    it("should handle expense with different currencies", async () => {
       mockDynamoDb.send.mockResolvedValue({
         Items: [
           {
@@ -139,10 +129,9 @@ describe("DynamoDBExpenseRepository", () => {
             SK: "EXPENSE#expense-1",
             type: "Expense",
             expenseId: "expense-1",
-            name: "Solo Coffee",
+            name: "Coffee in Europe",
             amountInCents: 500,
-            payerId: "member-1",
-            participants: ["member-1"],
+            currencyCode: "EUR",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -151,10 +140,12 @@ describe("DynamoDBExpenseRepository", () => {
 
       const result = await repository.findByGroupId(groupId);
 
-      expect(result[0].participants).toEqual(["member-1"]);
+      expect(result[0].id).toBe("expense-1");
+      expect(result[0].name).toBe("Coffee in Europe");
+      expect(result[0].currencyCode).toBe("EUR");
     });
 
-    it("should handle expense with multiple participants", async () => {
+    it("should handle expense with large amounts", async () => {
       mockDynamoDb.send.mockResolvedValue({
         Items: [
           {
@@ -164,8 +155,7 @@ describe("DynamoDBExpenseRepository", () => {
             expenseId: "expense-1",
             name: "Group Dinner",
             amountInCents: 10000,
-            payerId: "member-1",
-            participants: ["member-1", "member-2", "member-3", "member-4"],
+            currencyCode: "USD",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -174,7 +164,9 @@ describe("DynamoDBExpenseRepository", () => {
 
       const result = await repository.findByGroupId(groupId);
 
-      expect(result[0].participants).toHaveLength(4);
+      expect(result[0].name).toBe("Group Dinner");
+      expect(result[0].amountInCents).toBe(10000);
+      expect(result[0].currencyCode).toBe("USD");
     });
   });
 
@@ -202,8 +194,7 @@ describe("DynamoDBExpenseRepository", () => {
       expect(item?.expenseId).toBe("expense-1");
       expect(item?.name).toBe("Dinner");
       expect(item?.amountInCents).toBe(5000);
-      expect(item?.payerId).toBe("member-1");
-      expect(item?.participants).toEqual(["member-1", "member-2"]);
+      expect(item?.currencyCode).toBe("USD");
       expect(item?.createdAt).toBeDefined();
       expect(item?.updatedAt).toBeDefined();
     });
@@ -239,14 +230,11 @@ describe("DynamoDBExpenseRepository", () => {
       expect(item?.expenseId).toBe("expense-2");
       expect(item?.name).toBe("Lunch");
       expect(item?.amountInCents).toBe(3000);
-      expect(item?.payerId).toBe("member-2");
-      expect(item?.participants).toEqual(["member-2", "member-3"]);
+      expect(item?.currencyCode).toBe("USD");
     });
 
     it("should handle expense with zero amount", async () => {
-      const freeExpense = new Expense("expense-3", "Free", 0, "member-1", [
-        "member-1",
-      ]);
+      const freeExpense = new Expense("expense-3", "Free", 0, "USD");
       mockDynamoDb.send.mockResolvedValue({});
 
       await repository.save(freeExpense, groupId);
@@ -262,8 +250,7 @@ describe("DynamoDBExpenseRepository", () => {
         "expense-3",
         "Expensive",
         1000000,
-        "member-1",
-        ["member-1"],
+        "USD",
       );
       mockDynamoDb.send.mockResolvedValue({});
 
@@ -379,9 +366,7 @@ describe("DynamoDBExpenseRepository", () => {
 
   describe("edge cases", () => {
     it("should handle expense with empty name", async () => {
-      const emptyNameExpense = new Expense("expense-3", "", 1000, "member-1", [
-        "member-1",
-      ]);
+      const emptyNameExpense = new Expense("expense-3", "", 1000, "USD");
       mockDynamoDb.send.mockResolvedValue({});
 
       await repository.save(emptyNameExpense, groupId);
@@ -396,8 +381,7 @@ describe("DynamoDBExpenseRepository", () => {
         "expense-3",
         "Café & Restaurant (€50)",
         5000,
-        "member-1",
-        ["member-1"],
+        "EUR",
       );
       mockDynamoDb.send.mockResolvedValue({});
 
@@ -408,14 +392,12 @@ describe("DynamoDBExpenseRepository", () => {
       expect(item?.name).toBe("Café & Restaurant (€50)");
     });
 
-    it("should handle expense with very long participant list", async () => {
-      const participants = Array.from({ length: 100 }, (_, i) => `member-${i}`);
+    it("should handle expense with large amount", async () => {
       const largeExpense = new Expense(
         "expense-3",
         "Large Group",
         100000,
-        "member-1",
-        participants,
+        "GBP",
       );
       mockDynamoDb.send.mockResolvedValue({});
 
@@ -423,7 +405,8 @@ describe("DynamoDBExpenseRepository", () => {
 
       const sentCommand = mockDynamoDb.send.mock.calls[0]?.[0];
       const item = sentCommand?.input.Item as Record<string, unknown>;
-      expect(item?.participants).toHaveLength(100);
+      expect(item?.amountInCents).toBe(100000);
+      expect(item?.currencyCode).toBe("GBP");
     });
   });
 });

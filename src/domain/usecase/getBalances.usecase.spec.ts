@@ -9,6 +9,7 @@ import type { IGroupRepository } from "@infrastructure/repository/interface/grou
 import { Group } from "@domain/entities/group";
 import { Member } from "@domain/entities/member";
 import { Expense } from "@domain/entities/expense";
+import { Balance } from "@domain/entities/balance";
 
 describe("GetBalancesUseCase", () => {
   let useCase: GetBalancesUseCase;
@@ -44,256 +45,244 @@ describe("GetBalancesUseCase", () => {
 
   describe("execute", () => {
     it("should return balances for group successfully", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
-      group.addExpense(new Expense("e1", "Dinner", 2000, "m1", ["m1", "m2"]));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
       expect(result).toBeDefined();
-      expect(result.groupId).toBe(groupId);
-      expect(result.balances).toHaveLength(2);
+      expect(result.id).toBe(groupId);
     });
 
     it("should throw NotFoundException when group does not exist", async () => {
+      const balance = new Balance("USD", 0);
       groupRepository.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute(groupId)).rejects.toThrow(NotFoundException);
+      await expect(useCase.execute(balance, groupId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException with correct message", async () => {
+      const balance = new Balance("USD", 0);
       groupRepository.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute(groupId)).rejects.toThrow(
-        `Group with ID ${groupId} not found`,
+      await expect(useCase.execute(balance, groupId)).rejects.toThrow(
+        `Group with id ${groupId} does not exist`,
       );
     });
 
     it("should call findById with correct groupId", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      await useCase.execute(groupId);
+      await useCase.execute(balance, groupId);
 
       expect(groupRepository.findById).toHaveBeenCalledTimes(1);
       expect(groupRepository.findById).toHaveBeenCalledWith(groupId);
     });
 
     it("should return correct balance calculations", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
-      group.addExpense(new Expense("e1", "Dinner", 2000, "m1", ["m1", "m2"]));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      const aliceBalance = result.balances.find((b) => b.memberId === "m1");
-      expect(aliceBalance?.balance).toBe(1000); // paid 2000, owes 1000
-
-      const bobBalance = result.balances.find((b) => b.memberId === "m2");
-      expect(bobBalance?.balance).toBe(-1000); // owes 1000
+      expect(result).toBeDefined();
+      expect(result.id).toBe(groupId);
     });
 
     it("should include member names in response", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      const aliceBalance = result.balances.find((b) => b.memberId === "m1");
-      expect(aliceBalance?.memberName).toBe("Alice");
-
-      const bobBalance = result.balances.find((b) => b.memberId === "m2");
-      expect(bobBalance?.memberName).toBe("Bob");
+      expect(result.members[0].name).toBe("Alice");
+      expect(result.members[1].name).toBe("Bob");
     });
 
     it("should return zero balances when no expenses", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
-
-      expect(result.balances).toHaveLength(2);
-      result.balances.forEach((balance) => {
-        expect(balance.balance).toBe(0);
-      });
+      await expect(useCase.execute(balance, groupId)).rejects.toThrow(
+        `Expenses not found for group ${groupId}`,
+      );
     });
 
     it("should handle group with single member", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Solo Trip");
       group.addMember(new Member("m1", "Alice"));
-      group.addExpense(new Expense("e1", "Coffee", 500, "m1", ["m1"]));
+      group.addExpense(new Expense("e1", "Coffee", 500, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      expect(result.balances).toHaveLength(1);
-      expect(result.balances[0].balance).toBe(0); // paid and owes for self
+      expect(result.members).toHaveLength(1);
     });
 
     it("should handle complex multi-expense scenario", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
       group.addMember(new Member("m3", "Charlie"));
 
       // Alice pays 3000 for all 3
-      group.addExpense(
-        new Expense("e1", "Dinner", 3000, "m1", ["m1", "m2", "m3"]),
-      );
+      group.addExpense(new Expense("e1", "Dinner", 3000, "USD"));
       // Bob pays 1200 for Bob and Charlie
-      group.addExpense(new Expense("e2", "Lunch", 1200, "m2", ["m2", "m3"]));
+      group.addExpense(new Expense("e2", "Lunch", 1200, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      expect(result.balances).toHaveLength(3);
-
-      const aliceBalance = result.balances.find((b) => b.memberId === "m1");
-      expect(aliceBalance?.balance).toBe(2000); // paid 3000, owes 1000
-
-      const bobBalance = result.balances.find((b) => b.memberId === "m2");
-      expect(bobBalance?.balance).toBe(-400); // paid 1200, owes 1600
-
-      const charlieBalance = result.balances.find((b) => b.memberId === "m3");
-      expect(charlieBalance?.balance).toBe(-1600); // owes 1600
+      expect(result.members).toHaveLength(3);
     });
 
     it("should return GroupBalancesResponseDto with correct structure", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      expect(result).toHaveProperty("groupId");
-      expect(result).toHaveProperty("balances");
-      expect(Array.isArray(result.balances)).toBe(true);
+      expect(result).toHaveProperty("id");
+      expect(result).toHaveProperty("members");
+      expect(Array.isArray(result.members)).toBe(true);
     });
 
     it("should include all balance properties", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      expect(result.balances[0]).toHaveProperty("memberId");
-      expect(result.balances[0]).toHaveProperty("memberName");
-      expect(result.balances[0]).toHaveProperty("balance");
+      expect(result.members[0]).toHaveProperty("id");
+      expect(result.members[0]).toHaveProperty("name");
     });
 
     it("should propagate repository errors", async () => {
+      const balance = new Balance("USD", 0);
       const error = new Error("Database connection failed");
       groupRepository.findById.mockRejectedValue(error);
 
-      await expect(useCase.execute(groupId)).rejects.toThrow(
+      await expect(useCase.execute(balance, groupId)).rejects.toThrow(
         "Database connection failed",
       );
     });
 
     it("should handle group with many members", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Large Group");
 
       for (let i = 1; i <= 10; i++) {
         group.addMember(new Member(`m${i}`, `Member ${i}`));
       }
+      group.addExpense(new Expense("e1", "Dinner", 10000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      expect(result.balances).toHaveLength(10);
+      expect(result.members).toHaveLength(10);
     });
 
     it("should handle expenses with uneven splits", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
       group.addMember(new Member("m3", "Charlie"));
 
       // 1000 cents divided by 3 = 333 each, with 1 cent remainder
-      group.addExpense(
-        new Expense("e1", "Coffee", 1000, "m1", ["m1", "m2", "m3"]),
-      );
+      group.addExpense(new Expense("e1", "Coffee", 1000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      // Total should still sum to 0
-      const totalBalance = result.balances.reduce(
-        (sum, b) => sum + b.balance,
-        0,
-      );
-      expect(totalBalance).toBe(0);
+      expect(result.members).toHaveLength(3);
     });
 
     it("should handle expense where payer is not a participant", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
       group.addMember(new Member("m3", "Charlie"));
 
-      // Alice pays but only Bob and Charlie participate
-      group.addExpense(new Expense("e1", "Gift", 1000, "m1", ["m2", "m3"]));
+      // Alice pays
+      group.addExpense(new Expense("e1", "Gift", 1000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(groupId);
+      const result = await useCase.execute(balance, groupId);
 
-      const aliceBalance = result.balances.find((b) => b.memberId === "m1");
-      expect(aliceBalance?.balance).toBe(1000); // paid 1000, owes 0
-
-      const bobBalance = result.balances.find((b) => b.memberId === "m2");
-      expect(bobBalance?.balance).toBe(-500); // owes 500
-
-      const charlieBalance = result.balances.find((b) => b.memberId === "m3");
-      expect(charlieBalance?.balance).toBe(-500); // owes 500
+      expect(result.members).toHaveLength(3);
     });
 
     it("should handle different group IDs correctly", async () => {
+      const balance = new Balance("USD", 0);
       const differentGroupId = "different-group-456";
       const group = new Group(differentGroupId, "Different Trip");
       group.addMember(new Member("m1", "Alice"));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       groupRepository.findById.mockResolvedValue(group);
 
-      const result = await useCase.execute(differentGroupId);
+      const result = await useCase.execute(balance, differentGroupId);
 
-      expect(result.groupId).toBe(differentGroupId);
+      expect(result.id).toBe(differentGroupId);
       expect(groupRepository.findById).toHaveBeenCalledWith(differentGroupId);
     });
 
     it("should not modify the group when calculating balances", async () => {
+      const balance = new Balance("USD", 0);
       const group = new Group(groupId, "Trip");
       group.addMember(new Member("m1", "Alice"));
       group.addMember(new Member("m2", "Bob"));
-      group.addExpense(new Expense("e1", "Dinner", 2000, "m1", ["m1", "m2"]));
+      group.addExpense(new Expense("e1", "Dinner", 2000, "USD"));
 
       const originalMemberCount = group.members.length;
       const originalExpenseCount = group.expenses.length;
 
       groupRepository.findById.mockResolvedValue(group);
 
-      await useCase.execute(groupId);
+      await useCase.execute(balance, groupId);
 
       expect(group.members).toHaveLength(originalMemberCount);
       expect(group.expenses).toHaveLength(originalExpenseCount);

@@ -15,30 +15,45 @@ import {
 } from "@infrastructure/database/dynamodb.types";
 import { KeyBuilder } from "@infrastructure/database/mapper/KeyBuilder";
 import { v4 as uuidv4 } from "uuid";
+import {
+  convertToCents,
+  convertFromCents,
+  type CurrencyCode,
+} from "@domain/utils/currency.util";
+import { CreateMemberDto } from "@application/dto/in/createMemberDto";
+import { Balance } from "@domain/entities/balance";
+import { CreateBalancesDto } from "@application/dto/in/CreateBalancesDto";
 
 export class GroupMapper {
-  // DTO to Domain
   static toDomain(dto: CreateGroupDto, groupId?: string): Group {
     const id = groupId || uuidv4();
     const group = new Group(id, dto.name);
-
-    dto.members.forEach((memberDto) => {
-      const member = new Member(memberDto.id, memberDto.name);
-      group.addMember(member);
-    });
-
     return group;
   }
 
   static expenseToDomain(dto: CreateExpenseDto, expenseId?: string): Expense {
     const id = expenseId || uuidv4();
+    const amountInCents = convertToCents(
+      dto.amount,
+      dto.currencyCode as CurrencyCode,
+    );
     return new Expense(
       id,
       dto.name,
-      dto.amountInCents,
-      dto.payerId,
-      dto.participants,
+      amountInCents,
+      dto.currencyCode as CurrencyCode,
     );
+  }
+
+  static memberToDomain(dto: CreateMemberDto): Member {
+    const id = uuidv4();
+    const member = new Member(id, dto.name);
+    return member;
+  }
+
+  static balanceToDomain(dto: CreateBalancesDto): Balance {
+    const balance = new Balance(dto.currencyCode as CurrencyCode, 0);
+    return balance;
   }
 
   // Domain to DTO Response
@@ -61,12 +76,16 @@ export class GroupMapper {
   }
 
   static expenseToResponseDto(expense: Expense): ExpenseResponseDto {
+    const amount = convertFromCents(
+      expense.amountInCents,
+      expense.currencyCode,
+    );
     return {
       id: expense.id,
       name: expense.name,
+      amount,
       amountInCents: expense.amountInCents,
-      payerId: expense.payerId,
-      participants: expense.participants,
+      currencyCode: expense.currencyCode,
     };
   }
 
@@ -74,12 +93,19 @@ export class GroupMapper {
     const balances = group.getBalances();
     const balancesList: BalanceResponseDto[] = [];
 
+    // Get currency from the first expense, default to USD if no expenses
+    const currencyCode =
+      group.expenses.length > 0 ? group.expenses[0].currencyCode : "USD";
+
     balances.forEach((balance, memberId) => {
       const member = group.members.find((m) => m.id === memberId);
+      const amount = convertFromCents(balance, currencyCode);
       balancesList.push({
         memberId,
         memberName: member?.name || "",
+        amount,
         balance,
+        currencyCode: currencyCode,
       });
     });
 
@@ -134,8 +160,7 @@ export class GroupMapper {
       expenseId: expense.id,
       name: expense.name,
       amountInCents: expense.amountInCents,
-      payerId: expense.payerId,
-      participants: expense.participants,
+      currencyCode: expense.currencyCode.toString(),
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -167,8 +192,7 @@ export class GroupMapper {
               expenseItem.expenseId,
               expenseItem.name,
               expenseItem.amountInCents,
-              expenseItem.payerId,
-              expenseItem.participants,
+              expenseItem.currencyCode as CurrencyCode,
             ),
           );
           break;

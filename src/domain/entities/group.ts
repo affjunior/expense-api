@@ -1,8 +1,6 @@
 import { GroupID, MemberID } from "@domain/types/types";
 import { Expense } from "./expense";
 import { Member } from "./member";
-import { PayerNotMemberError } from "@domain/exceptions/PayerNotMemberError";
-import { ParticipantNotMemberError } from "@domain/exceptions/ParticipantNotMemberError";
 import { MemberAlreadyExistsError } from "@domain/exceptions/MemberAlreadyExistsError";
 
 export class Group {
@@ -22,47 +20,29 @@ export class Group {
   }
 
   addExpense(expense: Expense): void {
-    // Valida se o pagador e os participantes existem no grupo
-    const memberIds = this.members.map((m) => m.id);
-    if (!memberIds.includes(expense.payerId)) {
-      throw new PayerNotMemberError(expense.payerId);
-    }
-    for (const participantId of expense.participants) {
-      if (!memberIds.includes(participantId)) {
-        throw new ParticipantNotMemberError(participantId);
-      }
-    }
     this.expenses.push(expense);
   }
 
   getBalances(): Map<MemberID, number> {
     const balances = new Map<MemberID, number>();
+
+    // Initialize all members with 0 balance
     this.members.forEach((member) => balances.set(member.id, 0));
 
-    this.expenses.forEach((expense) => {
-      // Adiciona o valor total ao pagador
-      const payerBalance = balances.get(expense.payerId) || 0;
-      balances.set(expense.payerId, payerBalance + expense.amountInCents);
+    // Calculate total expenses in cents
+    const totalAmountInCents = this.expenses.reduce(
+      (sum, expense) => sum + expense.amountInCents,
+      0,
+    );
 
-      // Divide o custo entre os participantes
-      const numParticipants = expense.participants.length;
-      const amountPerPerson = Math.floor(
-        expense.amountInCents / numParticipants,
-      );
-      let remainder = expense.amountInCents % numParticipants;
+    // Divide equally among all members
+    const amountPerMember = Math.floor(
+      totalAmountInCents / this.members.length,
+    );
 
-      expense.participants.forEach((participantId) => {
-        let amountToDeduct = amountPerPerson;
-        // Distribui o resto (1 centavo por pessoa) de forma determinística
-        if (remainder > 0) {
-          amountToDeduct += 1;
-          remainder -= 1;
-        }
-
-        const participantBalance = balances.get(participantId) || 0;
-
-        balances.set(participantId, participantBalance - amountToDeduct);
-      });
+    // Set the balance for each member
+    this.members.forEach((member) => {
+      balances.set(member.id, amountPerMember);
     });
 
     return balances;
