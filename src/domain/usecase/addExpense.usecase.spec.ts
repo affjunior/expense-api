@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 // @ts-nocheck
 
 import { Test, TestingModule } from "@nestjs/testing";
-import { NotFoundException } from "@nestjs/common";
 import { AddExpenseUseCase } from "./addExpense.usecase";
 import type { IGroupRepository } from "@infrastructure/repository/interface/groupRepository";
-import { CreateExpenseDto } from "@application/dto/in/createExpenseDto";
 import { Group } from "@domain/entities/group";
 import { Member } from "@domain/entities/member";
 import { Expense } from "@domain/entities/expense";

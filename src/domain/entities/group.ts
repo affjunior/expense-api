@@ -2,7 +2,6 @@ import { GroupID, MemberID } from "@domain/types/types";
 import { Expense } from "./expense";
 import { Member } from "./member";
 import { MemberAlreadyExistsError } from "@domain/exceptions/MemberAlreadyExistsError";
-import { CurrencyCode } from "@domain/utils/currency.util";
 
 export class Group {
   public members: Member[] = [];
@@ -20,7 +19,7 @@ export class Group {
     this.members.push(member);
   }
 
-  addExpense(expense: Expense, group: Group): void {
+  addExpense(expense: Expense): void {
     this.expenses.push(expense);
   }
 

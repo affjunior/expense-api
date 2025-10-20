@@ -4,8 +4,6 @@ import type { IMemberRepository } from "@infrastructure/repository/interface/mem
 import type { IGroupRepository } from "@infrastructure/repository/interface/groupRepository";
 import { GroupNoExistsError } from "@domain/exceptions/GroupNoExistsError";
 import { MemberAlreadyExistsError } from "@domain/exceptions/MemberAlreadyExistsError";
-import { MemberResponseDto } from "@application/dto/out/memberResponseDto";
-import { GroupMapper } from "@application/mapper/group.mapper";
 
 @Injectable()
 export class AddMemberUseCase {

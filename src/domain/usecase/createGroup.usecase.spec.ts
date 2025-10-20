@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-// @ts-nocheck
 
 import { Test, TestingModule } from "@nestjs/testing";
 import { CreateGroupUseCase } from "./createGroup.usecase";
@@ -121,16 +118,17 @@ describe("CreateGroupUseCase", () => {
     it("should handle group with multiple members", async () => {
       const dto: CreateGroupDto = {
         name: "Large Group",
-        members: [
-          { id: "m1", name: "Alice" },
-          { id: "m2", name: "Bob" },
-          { id: "m3", name: "Charlie" },
-          { id: "m4", name: "David" },
-        ],
       };
 
+      const members = [
+        { id: "m1", name: "Alice" },
+        { id: "m2", name: "Bob" },
+        { id: "m3", name: "Charlie" },
+        { id: "m4", name: "David" },
+      ];
+
       const savedGroup = new Group("group-id", "Large Group");
-      dto.members.forEach((m) =>
+      members.forEach((m: { id: string; name: string }) =>
         savedGroup.addMember(new Member(m.id, m.name)),
       );
 
@@ -229,15 +227,16 @@ describe("CreateGroupUseCase", () => {
     it("should preserve member order", async () => {
       const dto: CreateGroupDto = {
         name: "Test Group",
-        members: [
-          { id: "m1", name: "Alice" },
-          { id: "m2", name: "Bob" },
-          { id: "m3", name: "Charlie" },
-        ],
       };
 
+      const members = [
+        { id: "m1", name: "Alice" },
+        { id: "m2", name: "Bob" },
+        { id: "m3", name: "Charlie" },
+      ];
+
       const savedGroup = new Group("group-id", "Test Group");
-      dto.members.forEach((m) =>
+      members.forEach((m: { id: string; name: string }) =>
         savedGroup.addMember(new Member(m.id, m.name)),
       );
 

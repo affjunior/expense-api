@@ -10,13 +10,12 @@ import { GetBalancesUseCase } from "@domain/usecase/getBalances.usecase";
 import { CreateGroupDto } from "@application/dto/in/createGroupDto";
 import { CreateExpenseDto } from "@application/dto/in/createExpenseDto";
 import { GroupResponseDto } from "@application/dto/out/groupResponseDto";
-import { GroupBalancesResponseDto } from "@application/dto/out/groupBalancesResponseDto";
+import { Group } from "@domain/entities/group";
 
 describe("GroupController", () => {
   let controller: GroupController;
   let createGroupUseCase: jest.Mocked<CreateGroupUseCase>;
   let addExpenseUseCase: jest.Mocked<AddExpenseUseCase>;
-  let addMemberUseCase: jest.Mocked<AddMemberUseCase>;
   let getBalancesUseCase: jest.Mocked<GetBalancesUseCase>;
 
   beforeEach(async () => {
@@ -61,7 +60,6 @@ describe("GroupController", () => {
     controller = module.get<GroupController>(GroupController);
     createGroupUseCase = module.get(CreateGroupUseCase);
     addExpenseUseCase = module.get(AddExpenseUseCase);
-    addMemberUseCase = module.get(AddMemberUseCase);
     getBalancesUseCase = module.get(GetBalancesUseCase);
   });
 
@@ -176,7 +174,7 @@ describe("GroupController", () => {
       const response: GroupResponseDto = {
         id: "group-id",
         name: "Large Group",
-        members: dto.members,
+        members: dto.members as Array<{ id: string; name: string }>,
         expenses: [],
       };
 
@@ -461,25 +459,6 @@ describe("GroupController", () => {
 
     it("should get balances for group successfully", async () => {
       const balanceDto = { currencyCode: "USD" };
-      const expectedResponse: GroupBalancesResponseDto = {
-        groupId,
-        balances: [
-          {
-            memberId: "m1",
-            memberName: "Alice",
-            balance: 1000,
-            amount: 10,
-            currencyCode: "USD",
-          },
-          {
-            memberId: "m2",
-            memberName: "Bob",
-            balance: -1000,
-            amount: -10,
-            currencyCode: "USD",
-          },
-        ],
-      };
 
       const mockGroup = {
         id: groupId,
@@ -499,7 +478,9 @@ describe("GroupController", () => {
         ),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -524,7 +505,9 @@ describe("GroupController", () => {
         getBalances: jest.fn().mockReturnValue(new Map([["m1", 0]])),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       await controller.getBalances(groupId, balanceDto);
 
@@ -546,7 +529,9 @@ describe("GroupController", () => {
         getBalances: jest.fn().mockReturnValue(new Map([["m1", 0]])),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -588,7 +573,9 @@ describe("GroupController", () => {
         getBalances: jest.fn().mockReturnValue(new Map([["m1", 0]])),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -617,7 +604,9 @@ describe("GroupController", () => {
         ),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -636,7 +625,9 @@ describe("GroupController", () => {
         getBalances: jest.fn().mockReturnValue(new Map([["m1", 500]])),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -658,7 +649,9 @@ describe("GroupController", () => {
         getBalances: jest.fn().mockReturnValue(new Map([["m1", 0]])),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       await controller.getBalances(differentGroupId, balanceDto);
 
@@ -690,7 +683,9 @@ describe("GroupController", () => {
         ),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 
@@ -721,7 +716,9 @@ describe("GroupController", () => {
         ),
       };
 
-      getBalancesUseCase.execute.mockResolvedValue(mockGroup as any);
+      getBalancesUseCase.execute.mockResolvedValue(
+        mockGroup as unknown as Group,
+      );
 
       const result = await controller.getBalances(groupId, balanceDto);
 

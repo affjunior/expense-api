@@ -1,4 +1,3 @@
-import { CurrencyCode } from "@domain/utils/currency.util";
 import { DynamoDBBaseItem } from "./dynamoDBBaseItem";
 
 export interface DynamoDBExpenseItem extends DynamoDBBaseItem {

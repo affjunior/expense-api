@@ -99,13 +99,13 @@ export class GroupMapper {
 
     balances.forEach((balance, memberId) => {
       const member = group.members.find((m) => m.id === memberId);
-      const amount = convertFromCents(balance, currencyCode as CurrencyCode);
+      const amount = convertFromCents(balance, currencyCode);
       balancesList.push({
         memberId,
         memberName: member?.name || "",
         amount,
         balance,
-        currencyCode: currencyCode as CurrencyCode,
+        currencyCode: currencyCode,
       });
     });
 
